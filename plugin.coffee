@@ -1,6 +1,7 @@
 fs = require 'fs'
 async = require 'async'
 jade = require 'jade'
+url = require 'url'
 
 module.exports = (env, callback) ->
 
@@ -14,9 +15,19 @@ module.exports = (env, callback) ->
     getFilename: ->
       @filepath.relative.replace /jade$/, 'html'
 
+    getLocation: (base) ->
+      uri = @getUrl base
+      return uri[0..uri.lastIndexOf('/')]
+
+    resolveLink: (match, base=env.config.baseUrl) ->
+        url.resolve @getLocation(base), match
+
     getHtml: ->
       ### render jade template using metadata as locals ###
-      @tpl @metadata
+      self = this
+      html = @tpl(@metadata)
+      html.replace /<img src="([^">]+)"/g, (match, src) ->
+        "<img src=\"" + self.resolveLink(src) + "\""
 
     getView: -> 'template'
 
